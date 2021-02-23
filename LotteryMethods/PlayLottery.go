@@ -3,92 +3,47 @@ package LotteryMethods
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mukhametkaly/OneLotteryTelegrambot/Bot"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
-var toPlay[]*playLottery
 
 
-type playLottery struct {
-	UserID int
-	Lottery *Lottery
-}
 
-func AppendToPlay(userID int)  {
-	for _, i := range toPlay {
-		if i.UserID == userID {
-			return
-		}
+func PlayLottery (lotID string, userID int) string {
+
+	lottery, err := GetLotteryByID(lotID)
+	if err != nil {
+		return "Error"
 	}
-	playLot := playLottery{
-		UserID: userID,
+	if lottery == nil {
+		return "Lottery not found"
 	}
 
-	toPlay = append(toPlay, &playLot)
-
-}
-
-func PrintUserLotteriesToPlayLottery(userID int) string  {
-
-	lotteries := GetLotteriesByRaffler(userID)
-	if len(lotteries) == 0 {
-		return "Sorry you dont have any lotteries"
+	if lottery.Raffler.UserID != userID {
+		return ""
 	}
 
-	str := "Please chose lottery which you need to play\n"
 
-	for _, i := range lotteries {
-		str += `/` + "play" + i.LotteryID + " - " + i.LotName + "\n"
+	lottery, out := PlayLotteryRequest(lottery.LotteryID)
+	if out != nil {
+		return *out
 	}
-	return str
-
-}
-
-func SetLotteryToPlay (lotID string, userID int) string {
-
-	for _, i := range toPlay {
-		if i.UserID == userID {
-			lottery, err := GetLotteryByID(lotID)
-			if err != nil {
-				return "Something went wrong, error to delete"
-			}
-			if lottery == nil {
-				return "Lottery not found"
-			}
-
-			if lottery.Raffler.UserID != userID {
-				return ""
-			}
-
-			i.Lottery = lottery
-
-			lottery, err = PlayLotteryRequest(i.Lottery.LotteryID)
-			if err != nil {
-				return "Something went wrong"
-			}
-			return 	Bot.PrintLotteryWinner(*lottery)
-
-
-		}
-	}
-
-	return ""
-
+	return 	PrintLotteryWinner(*lottery)
 
 }
 
 
 
-func PlayLotteryRequest(lotteryID string) (*Lottery, error) {
+func PlayLotteryRequest(lotteryID string) (*Lottery, *string) {
 
 	url := "http://3.134.80.221/lottery/play/" + lotteryID
+	output := "Error"
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("error happend", err)
-		return nil, err
+		return nil, &output
 	}
 	defer resp.Body.Close()
 
@@ -98,15 +53,16 @@ func PlayLotteryRequest(lotteryID string) (*Lottery, error) {
 
 	if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
 		fmt.Printf("runTransport %#v\n\n\n", string(respBody))
+		output = string(respBody)
+		return nil, &output
 	}
 
 	err = json.Unmarshal(respBody, lottery)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, err
+		return nil, &output
 	}
-
 
 	return lottery, nil
 

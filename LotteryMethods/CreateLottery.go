@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/mukhametkaly/OneLotteryTelegrambot/Bot"
-
-	//tgbotapi "gopkg.in/telegram-bot-api.v4"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -61,24 +58,7 @@ func SetLotteryText( userID int, text string) bool {
 	return false
 }
 
-//func CreateLotteryWithTimer(timer int, chatID uint64, userID int, bot *tgbotapi.BotAPI)  {
-//	lottery := Lottery{}
-//	for _, i := range BeingCreatedLotteryCollection {
-//		if i.Raffler.UserID ==  userID {
-//			lottery = i
-//		}
-//	}
-//
-//	err := CreateLotteryRequest(lottery)
-//	if err != nil {
-//		panic(err)
-//	}
-//}
-//func LotteryTimer(timer int64, chatID uint64, bot *tgbotapi.BotAPI, lotID string)  {
-//
-//	time.Sleep(time.Duration(timer))
-//
-//}
+
 
 func CreateLottery(userID int) string {
 	lottery := Lottery{}
@@ -91,7 +71,7 @@ func CreateLottery(userID int) string {
 	if RespLottery == nil {
 		return ""
 	}
-	return Bot.PrintLotteryMessage(*RespLottery)
+	return PrintLotteryMessage(*RespLottery)
 
 }
 

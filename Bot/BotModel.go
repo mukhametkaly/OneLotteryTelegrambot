@@ -55,22 +55,21 @@ func (bt *MyBot) Run(WebhookURL string) {
 
 			case "update":
 				LotteryMethods.AppendToUpdate(userID)
-				message := LotteryMethods.PrintUserLotteriesToUpdate(userID)
+				message := LotteryMethods.PrintUserLotteries(userID, "update")
 				bot.Send(NewReplyMessage(update.Message, message))
 
 			case "play":
 
-				LotteryMethods.AppendToPlay(userID)
-				message := LotteryMethods.PrintUserLotteriesToPlayLottery(userID)
+				message := LotteryMethods.PrintUserLotteries(userID, "play")
 				bot.Send(NewReplyMessage(update.Message, message))
 
 			case "delete":
-				LotteryMethods.AppendToDelete(userID)
-				message := LotteryMethods.PrintUserLotteriesToDelete(userID)
+				message := LotteryMethods.PrintUserLotteries(userID, "delete")
 				bot.Send(NewReplyMessage(update.Message, message))
 
 			case "info":
-
+				message := LotteryMethods.PrintUserLotteries(userID, "info")
+				bot.Send(NewReplyMessage(update.Message, message))
 
 			case "prize":
 				result := LotteryMethods.SetUpdateParam("prize", userID)
@@ -87,6 +86,11 @@ func (bt *MyBot) Run(WebhookURL string) {
 				if result == "OK" {
 					bot.Send(NewReplyMessage(update.Message, "Please write the update data"))
 				}
+
+			case "timer":
+				LotteryMethods.AppendToTimers(userID)
+				message := LotteryMethods.PrintUserLotteries(userID, "timer")
+				bot.Send(NewReplyMessage(update.Message, message))
 
 			default:
 
@@ -105,13 +109,15 @@ func (bt *MyBot) Run(WebhookURL string) {
 						}
 
 					case "delete":
-						result := LotteryMethods.SetLotteryToDelete(*lotID, userID)
+						result := LotteryMethods.DeleteLottery(*lotID, userID)
 						if result == "" {
 
 						} else {
 							bot.Send(NewReplyMessage(update.Message, result))
 						}
+
 					case "enjoy":
+
 						var result string
 						if update.Message.From.UserName == "" {
 							username  := strconv.Itoa(userID)
@@ -124,24 +130,37 @@ func (bt *MyBot) Run(WebhookURL string) {
 						} else {
 							bot.Send(NewReplyMessage(update.Message, result))
 						}
+
 					case "play":
-						result := LotteryMethods.SetLotteryToPlay(*lotID, userID)
+						result := LotteryMethods.PlayLottery(*lotID, userID)
 						if result == "" {
 
 						} else {
 							bot.Send(NewReplyMessage(update.Message, result))
 						}
+
+					case "info":
+						result := LotteryMethods.GetLotteryInfo(*lotID, userID)
+						if result == "" {
+
+						} else {
+
+							bot.Send(NewReplyMessage(update.Message, result))
+						}
+
+					case "timer":
+						result := LotteryMethods.SetLotteryToTimer(*lotID, userID)
+						if result == "" {
+						} else {
+							bot.Send(NewReplyMessage(update.Message, result))
+						}
+
 					}
 				}
 			}
 		} else {
 
-			if update.Message.Text == "privet" && update.Message.From.UserName == "mukhametkaly" {
-				bot.Send(tgbotapi.NewMessage(
-					update.Message.Chat.ID,
-					"krasava",
-				))
-			} else if update.Message.ReplyToMessage != nil {
+			 if update.Message.ReplyToMessage != nil {
 				if update.Message.ReplyToMessage.From.IsBot {
 
 					if update.Message.ReplyToMessage.Text == "Please write a name of your lottery" {
@@ -161,6 +180,18 @@ func (bt *MyBot) Run(WebhookURL string) {
 
 						message := LotteryMethods.UpdateLottery(update.Message.Text, userID)
 						bot.Send(NewReplyMessage(update.Message, message))
+
+					} else if update.Message.ReplyToMessage.Text == "How many hours do you want to set the timer for?" {
+						timer, err := strconv.Atoi(update.Message.Text)
+						if err != nil {
+							bot.Send(NewReplyMessage(update.Message, "Incorrect please write number in correct format"))
+						} else {
+							resultID := LotteryMethods.GetTimer(userID)
+							go PlayLotteryAfterTimer(timer, update.Message.Chat.ID, userID, resultID.LotID, bot  )
+
+							bot.Send(NewReplyMessage(update.Message, "OKQ! Timer started" ))
+						}
+
 
 					}
 

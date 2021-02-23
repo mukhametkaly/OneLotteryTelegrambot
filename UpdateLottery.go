@@ -1,9 +1,10 @@
-package LotteryMethods
+package main
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/mukhametkaly/OneLotteryTelegrambot/LotteryMethods"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -17,7 +18,7 @@ var toUpdate []*updateLottery
 type updateLottery struct {
 	UserID int
 	UpdateParam string
-	Lottery *Lottery
+	Lottery *LotteryMethods.Lottery
 }
 
 func AppendToUpdate(userID int)  {
@@ -34,12 +35,27 @@ func AppendToUpdate(userID int)  {
 
 }
 
+func PrintUserLotteriesToUpdate(userID int) string  {
+
+	lotteries := LotteryMethods.GetLotteriesByRaffler(userID)
+	if len(lotteries) == 0 {
+		return "Sorry you dont have any lotteries"
+	}
+
+	str := "Please chose lottery which you need to update\n"
+
+	for _, i := range lotteries {
+		str += `/` + "update" + i.LotteryID + " - " + i.LotName + "\n"
+	}
+	return str
+
+}
 
 func SetLotteryToUpdate(lotID string, userID int) string {
 
 	for _, i := range toUpdate {
 		if i.UserID == userID {
-			lottery, err := GetLotteryByID(lotID)
+			lottery, err := LotteryMethods.GetLotteryByID(lotID)
 			if err != nil {
 				return "Something went wrong, error to update"
 			}
@@ -57,9 +73,12 @@ func SetLotteryToUpdate(lotID string, userID int) string {
 				`/` + "text to edit Lottery text \n" +
 				`/` + "prize to edit Lottery prize \n" +
 				`/` + "name to edit Lottery name \n"
+
 		}
 	}
+
 	return ""
+
 
 }
 
@@ -97,7 +116,7 @@ func UpdateLottery(updText string, userID int) string  {
 }
 
 
-func UpdateLotteryRequest(lottery *Lottery) string {
+func UpdateLotteryRequest(lottery *LotteryMethods.Lottery) string {
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -136,7 +155,7 @@ func UpdateLotteryRequest(lottery *Lottery) string {
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		return "Lottery " + lottery.LotName + " successful updated"
+		return "Lottery" + lottery.LotName + "successful updated"
 	} else {
 		fmt.Printf("runTransport %#v\n\n\n", string(respBody))
 		return string(respBody)

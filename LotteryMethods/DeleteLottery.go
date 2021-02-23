@@ -9,69 +9,23 @@ import (
 	"time"
 )
 
-var toDelete[]*deleteLottery
 
 
-type deleteLottery struct {
-	UserID int
-	Lottery *Lottery
-}
+func DeleteLottery(lotID string, userID int) string {
 
-func AppendToDelete(userID int)  {
-	for _, i := range toDelete {
-		if i.UserID == userID {
-			return
-		}
+	lottery, err := GetLotteryByID(lotID)
+	if err != nil {
+		return "Something went wrong, error to delete"
 	}
-	deleteLot := deleteLottery{
-		UserID: userID,
+	if lottery == nil {
+		return "Lottery not found"
 	}
 
-	toDelete = append(toDelete, &deleteLot)
-
-}
-
-func PrintUserLotteriesToDelete(userID int) string  {
-
-	lotteries := GetLotteriesByRaffler(userID)
-	if len(lotteries) == 0 {
-		return "Sorry you dont have any lotteries"
+	if lottery.Raffler.UserID != userID {
+		return ""
 	}
 
-	str := "Please chose lottery which you need to delete\n"
-
-	for _, i := range lotteries {
-		str += `/` + "delete" + i.LotteryID + " - " + i.LotName + "\n"
-	}
-	return str
-
-}
-
-func SetLotteryToDelete(lotID string, userID int) string {
-
-	for _, i := range toDelete {
-		if i.UserID == userID {
-			lottery, err := GetLotteryByID(lotID)
-			if err != nil {
-				return "Something went wrong, error to delete"
-			}
-			if lottery == nil {
-				return "Lottery not found"
-			}
-
-			if lottery.Raffler.UserID != userID {
-				return ""
-			}
-
-			i.Lottery = lottery
-			return DeleteLotteryRequest(i.Lottery)
-
-
-		}
-	}
-
-	return ""
-
+	return DeleteLotteryRequest(lottery)
 
 }
 
@@ -95,7 +49,6 @@ func DeleteLotteryRequest(lottery *Lottery) string {
 		Transport: transport,
 	}
 
-
 	body := bytes.NewBuffer([]byte(""))
 
 	url := "http://3.134.80.221/lottery/delete/" + lottery.LotteryID
@@ -113,7 +66,7 @@ func DeleteLotteryRequest(lottery *Lottery) string {
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		return "Lottery" + lottery.LotName + "successful deleted"
+		return "Lottery " + lottery.LotName + " successful deleted"
 	} else {
 		fmt.Printf("runTransport %#v\n\n\n", string(respBody))
 		return string(respBody)
